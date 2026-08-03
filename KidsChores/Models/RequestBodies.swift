@@ -109,6 +109,20 @@ struct CreateDefinitionRequest: Encodable {
     }
 }
 
+/// Partial update of a series. ⚠️ Assumed contract `PATCH /v1/series/{id}` —
+/// not in the API reference yet (see docs). Only the safely-editable fields;
+/// nil fields are omitted (structural fields like membership/window can't change
+/// after creation).
+struct SeriesUpdateRequest: Encodable {
+    let name: String?
+    let bonusPoints: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case bonusPoints = "bonus_points"
+    }
+}
+
 struct CreateSeriesRequest: Encodable {
     let name: String
     let assigneeID: String

@@ -72,6 +72,9 @@ struct SavingsGoal: Decodable, Identifiable, Hashable {
 struct Claim: Decodable, Identifiable, Hashable {
     let id: String
     let memberID: String
+    /// The teen's display name — populated by the list endpoint for the parent
+    /// inbox (nil on the single-claim create response).
+    let memberName: String?
     let points: Int
     let requestedItem: String
     let status: ClaimStatus
@@ -82,6 +85,7 @@ struct Claim: Decodable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id
         case memberID = "member_id"
+        case memberName = "member_name"
         case points
         case requestedItem = "requested_item"
         case status

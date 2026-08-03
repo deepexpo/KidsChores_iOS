@@ -51,6 +51,18 @@ struct RefreshRequest: Encodable {
     }
 }
 
+/// Body for changing the signed-in account's password.
+/// ⚠️ Assumed contract `POST /v1/auth/change-password` — see docs/auth-endpoints.md.
+struct ChangePasswordRequest: Encodable {
+    let currentPassword: String
+    let newPassword: String
+
+    enum CodingKeys: String, CodingKey {
+        case currentPassword = "current_password"
+        case newPassword = "new_password"
+    }
+}
+
 /// Response from `POST /v1/auth/apple`. Sign-in *is* signup for a new Apple ID.
 struct AuthTokens: Decodable {
     let accessToken: String

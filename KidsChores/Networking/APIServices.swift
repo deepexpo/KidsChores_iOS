@@ -27,6 +27,16 @@ protocol AuthService {
     func signInWithApple(_ request: AppleSignInRequest) async throws -> AuthTokens
 }
 
+// MARK: - Account (the signed-in parent's own login)
+
+protocol AccountService {
+    /// Change the account password. ⚠️ Assumed `POST /v1/auth/change-password`.
+    func changePassword(_ request: ChangePasswordRequest) async throws
+    /// Permanently delete the account (and, for a sole owner, the household).
+    /// ⚠️ Assumed `DELETE /v1/account`.
+    func deleteAccount() async throws
+}
+
 // MARK: - Household & members
 
 protocol HouseholdService {
@@ -78,6 +88,9 @@ protocol SeriesService {
     func series(includeArchived: Bool) async throws -> [Series]
     func createSeries(_ request: CreateSeriesRequest) async throws -> Series
     func seriesInstances(seriesID: String) async throws -> [SeriesInstance]
+    /// Edit a series' name/bonus. ⚠️ Assumed `PATCH /v1/series/{id}`.
+    func updateSeries(id: String, _ request: SeriesUpdateRequest) async throws -> Series
+    /// `DELETE /v1/series/{id}` — archives (soft-delete), preserves history.
     func archiveSeries(id: String) async throws
 }
 
@@ -88,11 +101,22 @@ protocol WalletService {
     func ledger(memberID: String, limit: Int, offset: Int) async throws -> [LedgerEntry]
     func adjust(memberID: String, _ request: AdjustWalletRequest) async throws -> LedgerEntry
     func createClaim(_ request: CreateClaimRequest) async throws -> Claim
+    /// Pending claims across the household, for the parent inbox. ⚠️ Assumed
+    /// `GET /v1/wallet/claims?status=pending` — not in the API reference yet.
+    func pendingClaims() async throws -> [Claim]
     func resolveClaim(claimID: String, _ request: ResolveClaimRequest) async throws -> Claim
     func createGoal(memberID: String, _ request: CreateGoalRequest) async throws -> SavingsGoal
 }
 
+// MARK: - Reports (P1)
+
+protocol ReportService {
+    /// Per-teen weekly report over the last `weeks` weeks. ⚠️ Assumed
+    /// `GET /v1/reports/{member_id}?weeks=` — not in the API reference yet.
+    func report(memberID: String, weeks: Int) async throws -> Report
+}
+
 /// Convenience umbrella for composition roots / previews that want everything.
 /// Individual features should still depend on the narrow protocols above.
-typealias KidsChoresAPI = AuthService & HouseholdService & DefinitionService
-    & TaskService & ApprovalService & SeriesService & WalletService
+typealias KidsChoresAPI = AuthService & AccountService & HouseholdService & DefinitionService
+    & TaskService & ApprovalService & SeriesService & WalletService & ReportService

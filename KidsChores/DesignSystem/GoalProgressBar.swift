@@ -22,24 +22,45 @@ struct GoalProgressBar: View {
 
     private var remaining: Int { max(target - balance, 0) }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var animatedFraction: Double = 0
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title).font(.subheadline.weight(.medium))
                 Spacer()
-                Text(remaining == 0 ? "Reached!" : "\(remaining) to go")
+                Text(remaining == 0 ? "Reached! 🎉" : "\(remaining) to go")
                     .font(.caption)
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(remaining == 0 ? Color.green : .secondary)
             }
-            ProgressView(value: fraction)
-                .tint(.accentColor)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.secondary.opacity(0.15))
+                    Capsule()
+                        .fill(LinearGradient(colors: [.accentColor, .accentColor.opacity(0.7)],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(0, geo.size.width * animatedFraction))
+                }
+            }
+            .frame(height: 10)
             Text("\(balance) / \(target) \(pointsLabel)")
                 .font(.caption2)
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
+        .onAppear { setFraction(animated: !reduceMotion) }
+        .onChange(of: fraction) { _, _ in setFraction(animated: !reduceMotion) }
+    }
+
+    private func setFraction(animated: Bool) {
+        if animated {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) { animatedFraction = fraction }
+        } else {
+            animatedFraction = fraction
+        }
     }
 }
 

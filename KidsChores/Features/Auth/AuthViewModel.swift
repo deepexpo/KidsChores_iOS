@@ -26,10 +26,10 @@ final class AuthViewModel {
     private(set) var errorMessage: String?
 
     private let service: AuthService
-    /// Called with the fresh tokens on success (wired to `AppSession.didSignIn`).
-    private let onSignedIn: (AuthTokens) -> Void
+    /// Called with the fresh tokens and the account email on success.
+    private let onSignedIn: (AuthTokens, String) -> Void
 
-    init(service: AuthService, onSignedIn: @escaping (AuthTokens) -> Void) {
+    init(service: AuthService, onSignedIn: @escaping (AuthTokens, String) -> Void) {
         self.service = service
         self.onSignedIn = onSignedIn
     }
@@ -73,7 +73,7 @@ final class AuthViewModel {
                         password: password,
                         displayName: displayName.trimmingCharacters(in: .whitespaces)))
             }
-            onSignedIn(tokens)
+            onSignedIn(tokens, cleanEmail)
         } catch let error as APIError {
             errorMessage = Self.message(for: error)
         } catch {

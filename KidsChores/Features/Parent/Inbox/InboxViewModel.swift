@@ -26,6 +26,8 @@ final class InboxViewModel {
 
     private(set) var state: ViewState = .loading
     private(set) var items: [ApprovalItem] = []
+    /// Pending point claims awaiting the parent (shown in the inbox too).
+    private(set) var claims: [Claim] = []
 
     /// The card currently in its ~4s undo window, if any (drives the toast).
     private(set) var undoItem: ApprovalItem?
@@ -38,24 +40,63 @@ final class InboxViewModel {
 
     private let approvalService: ApprovalService
     private let taskService: TaskService
+    private let walletService: WalletService
     private var undoTask: Task<Void, Never>?
 
-    init(approvalService: ApprovalService, taskService: TaskService) {
+    init(approvalService: ApprovalService, taskService: TaskService, walletService: WalletService) {
         self.approvalService = approvalService
         self.taskService = taskService
+        self.walletService = walletService
     }
+
+    private var isEmpty: Bool { items.isEmpty && claims.isEmpty }
 
     // MARK: - Loading
 
     func load() async {
-        if items.isEmpty { state = .loading }
+        if isEmpty { state = .loading }
         do {
-            let fetched = try await approvalService.approvals()
+            async let approvalsCall = approvalService.approvals()
+            // Claims are a separate, newer endpoint — tolerate its absence so the
+            // inbox still works if the backend hasn't shipped it yet.
+            async let claimsCall = pendingClaimsOrEmpty()
+            let (fetched, fetchedClaims) = try await (approvalsCall, claimsCall)
             items = fetched.sorted { $0.submittedAt < $1.submittedAt }   // oldest-first
-            state = items.isEmpty ? .caughtUp : .loaded
+            claims = fetchedClaims.sorted { $0.requestedAt < $1.requestedAt }
+            state = isEmpty ? .caughtUp : .loaded
         } catch {
-            if items.isEmpty { state = .failed(Self.message(for: error)) }
+            if isEmpty { state = .failed(Self.message(for: error)) }
         }
+    }
+
+    private func pendingClaimsOrEmpty() async -> [Claim] {
+        (try? await walletService.pendingClaims()) ?? []
+    }
+
+    // MARK: - Claims
+
+    func approveClaim(_ claim: Claim) async {
+        claims.removeAll { $0.id == claim.id }
+        Haptics.success()
+        await resolveClaim(claim, approve: true, note: nil)
+    }
+
+    func denyClaim(_ claim: Claim) async {
+        claims.removeAll { $0.id == claim.id }
+        Haptics.warning()
+        await resolveClaim(claim, approve: false, note: nil)
+    }
+
+    private func resolveClaim(_ claim: Claim, approve: Bool, note: String?) async {
+        do {
+            _ = try await walletService.resolveClaim(
+                claimID: claim.id, ResolveClaimRequest(approve: approve, parentNote: note))
+        } catch {
+            claims.append(claim)
+            claims.sort { $0.requestedAt < $1.requestedAt }
+            errorMessage = "Couldn't update \(claim.memberName ?? "the")'s claim. It's back in your inbox."
+        }
+        if isEmpty && undoItem == nil { state = .caughtUp }
     }
 
     func refresh() async { await load() }
@@ -149,14 +190,14 @@ final class InboxViewModel {
         }
         selection.removeAll()
         isSelecting = false
-        if items.isEmpty { state = .caughtUp }
+        if isEmpty { state = .caughtUp }
     }
 
     // MARK: - List helpers
 
     private func remove(_ item: ApprovalItem) {
         items.removeAll { $0.id == item.id }
-        if items.isEmpty && undoItem == nil { state = .caughtUp }
+        if isEmpty && undoItem == nil { state = .caughtUp }
     }
 
     private func reinsert(_ item: ApprovalItem) {

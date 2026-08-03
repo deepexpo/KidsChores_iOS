@@ -75,7 +75,7 @@ struct ProfilePickerView: View {
             LazyVGrid(columns: columns, spacing: 20) {
                 ForEach(teens) { teen in
                     Button { select(teen) } label: { tile(teen) }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                 }
             }
             .padding()
@@ -84,21 +84,15 @@ struct ProfilePickerView: View {
 
     private func tile(_ teen: Member) -> some View {
         VStack(spacing: 10) {
-            ZStack {
-                Circle().fill(Color.accentColor.opacity(0.15))
-                Text(initials(teen.displayName))
-                    .font(.title.bold())
-                    .foregroundStyle(.tint)
-            }
-            .frame(width: 96, height: 96)
-            .overlay(alignment: .bottomTrailing) {
-                if teen.hasPIN {
-                    Image(systemName: "lock.fill")
-                        .font(.caption)
-                        .padding(6)
-                        .background(.regularMaterial, in: Circle())
+            AvatarView(name: teen.displayName, seed: teen.id, size: 96)
+                .overlay(alignment: .bottomTrailing) {
+                    if teen.hasPIN {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .padding(6)
+                            .background(.regularMaterial, in: Circle())
+                    }
                 }
-            }
             Text(teen.displayName).font(.headline)
         }
     }
@@ -139,12 +133,6 @@ struct ProfilePickerView: View {
         } catch {
             return .error
         }
-    }
-
-    private func initials(_ name: String) -> String {
-        let parts = name.split(separator: " ")
-        let letters = parts.prefix(2).compactMap { $0.first }
-        return String(letters).uppercased()
     }
 
     private func load() async {

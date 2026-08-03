@@ -81,9 +81,32 @@ private final class MemberDetailViewModel {
             try await householdService.deleteMember(id: member.id)
             pinStore.clear(for: member.id)
             return true
+        } catch let error as APIError {
+            errorMessage = Self.deleteMessage(for: error, name: member.displayName)
+            return false
         } catch {
             errorMessage = "Couldn't remove \(member.displayName). Please try again."
             return false
+        }
+    }
+
+    /// Surfaces the server's reason. Deleting a teen that has task instances /
+    /// ledger history fails on the backend today (a data-integrity constraint) —
+    /// this reports it clearly instead of a generic "try again".
+    private static func deleteMessage(for error: APIError, name: String) -> String {
+        switch error {
+        case .unprocessable(let detail):
+            return detail ?? "\(name) still has tasks or history, so they can't be removed yet."
+        case .server(let status, let detail):
+            return detail ?? "Couldn't remove \(name) (server error \(status)). They may still have tasks or history."
+        case .forbidden:
+            return "Only a parent can remove a teen."
+        case .transport:
+            return "Couldn't reach the server. Check your connection and try again."
+        case .notFound:
+            return "\(name) is already removed."
+        case .unauthorized, .rateLimited, .decoding:
+            return "Couldn't remove \(name). Please try again."
         }
     }
 }

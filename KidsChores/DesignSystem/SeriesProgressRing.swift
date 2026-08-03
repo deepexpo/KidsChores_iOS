@@ -19,22 +19,43 @@ struct SeriesProgressRing: View {
         return Double(completed) / Double(total)
     }
 
+    private var isComplete: Bool { total > 0 && completed >= total }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var animated: Double = 0
+
     var body: some View {
         ZStack {
             Circle()
                 .stroke(Color.secondary.opacity(0.2), lineWidth: lineWidth)
             Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(Color.accentColor,
+                .trim(from: 0, to: animated)
+                .stroke(LinearGradient(colors: [.accentColor, .accentColor.opacity(0.65)],
+                                       startPoint: .top, endPoint: .bottom),
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.spring(duration: 0.4), value: fraction)
-            Text("\(completed) of \(total)")
-                .font(.caption.weight(.semibold))
-                .monospacedDigit()
+            if isComplete {
+                Image(systemName: "checkmark")
+                    .font(.system(size: diameter * 0.3, weight: .bold))
+                    .foregroundStyle(Color.accentColor)
+            } else {
+                Text("\(completed) of \(total)")
+                    .font(.caption.weight(.semibold))
+                    .monospacedDigit()
+            }
         }
         .frame(width: diameter, height: diameter)
+        .onAppear { set(animated: !reduceMotion) }
+        .onChange(of: fraction) { _, _ in set(animated: !reduceMotion) }
         .accessibilityLabel("Series progress: \(completed) of \(total) complete")
+    }
+
+    private func set(animated shouldAnimate: Bool) {
+        if shouldAnimate {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) { animated = fraction }
+        } else {
+            animated = fraction
+        }
     }
 }
 

@@ -169,7 +169,6 @@ final class TodayViewModel {
     func excuse(_ row: Row, text: String) async {
         guard row.canExcuse else { return }
         applyOptimistic(row.id, status: .excusePending)
-        Haptics.impact()
         let key = UUID().uuidString
         outbox.enqueue(kind: .excuse, instanceID: row.id, text: text, key: key)
         reconcile(await outbox.drain())

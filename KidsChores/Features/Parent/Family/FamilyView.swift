@@ -13,6 +13,7 @@ struct FamilyView: View {
     @State private var vm: FamilyViewModel
     @State private var showSettings = false
     @State private var showAddTeen = false
+    @State private var showAccount = false
     private let walletService: WalletService
     private let householdService: HouseholdService
 
@@ -33,18 +34,29 @@ struct FamilyView: View {
                 .navigationTitle("Family")
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
+                        Button { showAccount = true } label: {
+                            Image(systemName: "person.crop.circle")
+                        }
+                        .accessibilityLabel("Account")
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button { showSettings = true } label: {
                             Image(systemName: "gearshape")
                         }
+                        .accessibilityLabel("Household settings")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { showAddTeen = true } label: {
                             Image(systemName: "person.badge.plus")
                         }
+                        .accessibilityLabel("Add teen")
                     }
                 }
                 .task { await vm.load() }
                 .refreshable { await vm.load() }
+                .sheet(isPresented: $showAccount) {
+                    AccountView()
+                }
                 .sheet(isPresented: $showSettings) {
                     HouseholdSettingsView(service: householdService)
                 }
@@ -93,8 +105,7 @@ struct FamilyView: View {
 
     private func card(_ teen: FamilyViewModel.TeenSummary) -> some View {
         HStack(spacing: 14) {
-            SeriesProgressRing(completed: teen.completedThisWeek,
-                               total: teen.totalThisWeek, lineWidth: 6, diameter: 52)
+            AvatarView(name: teen.member.displayName, seed: teen.member.id, size: 52)
             VStack(alignment: .leading, spacing: 3) {
                 Text(teen.member.displayName).font(.headline)
                 Text("\(teen.balance) \(teen.pointsLabel)")
@@ -103,6 +114,8 @@ struct FamilyView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
+            SeriesProgressRing(completed: teen.completedThisWeek,
+                               total: teen.totalThisWeek, lineWidth: 5, diameter: 44)
         }
         .padding(.vertical, 4)
     }

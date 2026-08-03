@@ -20,10 +20,15 @@ struct ApprovalCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: isExcuse ? "text.bubble" : "checkmark.circle")
-                    .foregroundStyle(.tint)
-                Text(item.assigneeName).font(.subheadline.weight(.semibold))
+            HStack(spacing: 10) {
+                AvatarView(name: item.assigneeName, seed: item.assigneeName, size: 36)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.assigneeName).font(.subheadline.weight(.semibold))
+                    Label(isExcuse ? "Excuse" : "Completion",
+                          systemImage: isExcuse ? "text.bubble" : "checkmark.circle")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 PointPill(value: item.pointValue, showsSign: false)
             }

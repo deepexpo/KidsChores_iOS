@@ -15,9 +15,9 @@ struct InboxView: View {
     @State private var denyTarget: ApprovalItem?
     @State private var showBulkDeny = false
 
-    init(approvalService: ApprovalService, taskService: TaskService) {
+    init(approvalService: ApprovalService, taskService: TaskService, walletService: WalletService) {
         _vm = State(initialValue: InboxViewModel(
-            approvalService: approvalService, taskService: taskService))
+            approvalService: approvalService, taskService: taskService, walletService: walletService))
     }
 
     var body: some View {
@@ -70,22 +70,40 @@ struct InboxView: View {
 
     private var cardList: some View {
         List(selection: $vm.selection) {
-            ForEach(vm.items) { item in
-                ApprovalCard(
-                    item: item,
-                    onApprove: { withAnimation { vm.approve(item) } },
-                    onDeny: { denyTarget = item })
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                    Button { withAnimation { vm.approve(item) } } label: {
-                        Label("Approve", systemImage: "checkmark")
+            if !vm.claims.isEmpty {
+                Section("Reward claims") {
+                    ForEach(vm.claims) { claim in
+                        ClaimCard(
+                            claim: claim,
+                            onApprove: { Task { await vm.approveClaim(claim) } },
+                            onDeny: { Task { await vm.denyClaim(claim) } })
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .selectionDisabled()
                     }
-                    .tint(.green)
                 }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) { denyTarget = item } label: {
-                        Label("Deny", systemImage: "xmark")
+            }
+
+            if !vm.items.isEmpty {
+                Section(vm.claims.isEmpty ? "" : "Task approvals") {
+                    ForEach(vm.items) { item in
+                        ApprovalCard(
+                            item: item,
+                            onApprove: { withAnimation { vm.approve(item) } },
+                            onDeny: { denyTarget = item })
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            Button { withAnimation { vm.approve(item) } } label: {
+                                Label("Approve", systemImage: "checkmark")
+                            }
+                            .tint(.green)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) { denyTarget = item } label: {
+                                Label("Deny", systemImage: "xmark")
+                            }
+                        }
                     }
                 }
             }

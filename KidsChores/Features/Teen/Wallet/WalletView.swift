@@ -91,21 +91,34 @@ struct WalletView: View {
         .listStyle(.insetGrouped)
     }
 
-    // MARK: - Balance
+    // MARK: - Balance (themed hero)
 
     private var balanceHeader: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 4) {
+            Image(systemName: "star.circle.fill")
+                .font(.title2)
+                .foregroundStyle(Brand.cream.opacity(0.9))
             Text("\(vm.balance)")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                .font(.system(size: 56, weight: .bold, design: .rounded))
                 .monospacedDigit()
+                .foregroundStyle(Brand.cream)
                 .contentTransition(.numericText(value: Double(vm.balance)))
                 .animation(.snappy, value: vm.balance)
             Text(vm.pointsLabel)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Brand.cream.opacity(0.85))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
+        .padding(.vertical, 28)
+        .background(Brand.backdrop)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Brand.clayDark.opacity(0.3), radius: 12, y: 6)
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
     }
 
     // MARK: - Goal

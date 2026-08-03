@@ -69,6 +69,14 @@ final class AppSession {
     var api: KidsChoresAPI { container.api }
     var pinStore: PINStore { container.pinStore }
 
+    // MARK: - Account
+
+    private let accountEmailKey = "accountEmail"
+    /// The signed-in parent's email, remembered at sign-in for display on the
+    /// Account screen (the auth response doesn't include it).
+    var accountEmail: String? { defaults.string(forKey: accountEmailKey) }
+    func rememberAccountEmail(_ email: String) { defaults.set(email, forKey: accountEmailKey) }
+
     // MARK: - Parent passcode (gates leaving family-device mode)
 
     /// Reserved Keychain account for the parent's device passcode. Stored via
@@ -121,6 +129,7 @@ final class AppSession {
 
     func signOut() {
         container.tokenStore.clear()
+        defaults.removeObject(forKey: accountEmailKey)
         activeTeen = nil
         phase = .signedOut
     }

@@ -27,11 +27,19 @@ struct EmptyStateView: View {
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 40))
+                .font(.system(size: 44))
                 .foregroundStyle(tint)
+                .symbolRenderingMode(.hierarchical)
+                .padding(20)
+                .background(tint.opacity(0.12), in: Circle())
+                .scaleEffect(appeared ? 1 : 0.5)
+                .opacity(appeared ? 1 : 0)
             Text(headline)
                 .font(.headline)
                 .multilineTextAlignment(.center)
@@ -49,6 +57,13 @@ struct EmptyStateView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            if reduceMotion {
+                appeared = true
+            } else {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.6)) { appeared = true }
+            }
+        }
     }
 
     private var tint: Color {

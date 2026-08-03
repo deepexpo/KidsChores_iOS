@@ -30,6 +30,7 @@ final class SeriesListViewModel {
     private(set) var state: ViewState = .loading
     private(set) var rows: [Row] = []
     private(set) var assignees: [Member] = []
+    var errorMessage: String?
 
     private let seriesService: SeriesService
     private let householdService: HouseholdService
@@ -62,6 +63,29 @@ final class SeriesListViewModel {
             state = rows.isEmpty ? .empty : .loaded
         } catch {
             if rows.isEmpty { state = .failed(Self.message(for: error)) }
+        }
+    }
+
+    /// Archive (delete) a series — `DELETE /v1/series/{id}`.
+    func archive(seriesID: String) async {
+        do {
+            try await seriesService.archiveSeries(id: seriesID)
+            await load()
+        } catch {
+            errorMessage = Self.message(for: error)
+        }
+    }
+
+    /// Edit a series' name/bonus. Returns true on success.
+    func update(seriesID: String, name: String, bonusPoints: Int) async -> Bool {
+        do {
+            _ = try await seriesService.updateSeries(
+                id: seriesID, SeriesUpdateRequest(name: name, bonusPoints: bonusPoints))
+            await load()
+            return true
+        } catch {
+            errorMessage = Self.message(for: error)
+            return false
         }
     }
 

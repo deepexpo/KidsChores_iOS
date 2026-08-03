@@ -35,7 +35,8 @@ struct SignInView: View {
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
         .onAppear {
             if model == nil {
-                model = AuthViewModel(service: session.api) { tokens in
+                model = AuthViewModel(service: session.api) { tokens, email in
+                    session.rememberAccountEmail(email)
                     session.didSignIn(tokens)
                 }
             }

@@ -56,6 +56,19 @@ extension LiveAPIClient: AuthService {
     }
 }
 
+// MARK: - AccountService
+
+extension LiveAPIClient: AccountService {
+    func changePassword(_ request: ChangePasswordRequest) async throws {
+        try await http.send(
+            HTTPRequest(method: "POST", path: "/v1/auth/change-password", body: try encode(request)))
+    }
+
+    func deleteAccount() async throws {
+        try await http.send(HTTPRequest(method: "DELETE", path: "/v1/account"))
+    }
+}
+
 // MARK: - HouseholdService
 
 extension LiveAPIClient: HouseholdService {
@@ -220,8 +233,25 @@ extension LiveAPIClient: SeriesService {
             as: [SeriesInstance].self)
     }
 
+    func updateSeries(id: String, _ request: SeriesUpdateRequest) async throws -> Series {
+        try await http.send(
+            HTTPRequest(method: "PATCH", path: "/v1/series/\(id)", body: try encode(request)),
+            as: Series.self)
+    }
+
     func archiveSeries(id: String) async throws {
         try await http.send(HTTPRequest(method: "DELETE", path: "/v1/series/\(id)"))
+    }
+}
+
+// MARK: - ReportService
+
+extension LiveAPIClient: ReportService {
+    func report(memberID: String, weeks: Int) async throws -> Report {
+        try await http.send(
+            HTTPRequest(method: "GET", path: "/v1/reports/\(memberID)",
+                        query: [URLQueryItem(name: "weeks", value: String(weeks))]),
+            as: Report.self)
     }
 }
 
@@ -250,6 +280,13 @@ extension LiveAPIClient: WalletService {
         try await http.send(
             HTTPRequest(method: "POST", path: "/v1/wallet/claims", body: try encode(request)),
             as: Claim.self)
+    }
+
+    func pendingClaims() async throws -> [Claim] {
+        try await http.send(
+            HTTPRequest(method: "GET", path: "/v1/wallet/claims",
+                        query: [URLQueryItem(name: "status", value: "pending")]),
+            as: [Claim].self)
     }
 
     func resolveClaim(claimID: String, _ request: ResolveClaimRequest) async throws -> Claim {

@@ -15,7 +15,7 @@ import SwiftUI
 
 /// The parent's top-level sections, shared by the tab bar and the sidebar.
 enum ParentSection: String, CaseIterable, Identifiable {
-    case inbox, family, tasks
+    case inbox, family, tasks, reports
 
     var id: String { rawValue }
 
@@ -24,6 +24,7 @@ enum ParentSection: String, CaseIterable, Identifiable {
         case .inbox: "Inbox"
         case .family: "Family"
         case .tasks: "Tasks"
+        case .reports: "Reports"
         }
     }
 
@@ -32,6 +33,7 @@ enum ParentSection: String, CaseIterable, Identifiable {
         case .inbox: "tray"
         case .family: "person.2"
         case .tasks: "list.bullet.rectangle"
+        case .reports: "chart.xyaxis.line"
         }
     }
 }
@@ -64,6 +66,9 @@ private struct ParentTabView: View {
             Tab(ParentSection.tasks.title, systemImage: ParentSection.tasks.systemImage) {
                 parentSectionView(.tasks, session: session)
             }
+            Tab(ParentSection.reports.title, systemImage: ParentSection.reports.systemImage) {
+                parentSectionView(.reports, session: session)
+            }
         }
     }
 }
@@ -74,6 +79,7 @@ private struct ParentSplitView: View {
     @Environment(AppSession.self) private var session
     @State private var selection: ParentSection? = .inbox
     @State private var showSettings = false
+    @State private var showAccount = false
 
     var body: some View {
         NavigationSplitView {
@@ -91,6 +97,9 @@ private struct ParentSplitView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) { sidebarFooter }
             .sheet(isPresented: $showSettings) {
                 HouseholdSettingsView(service: session.api)
+            }
+            .sheet(isPresented: $showAccount) {
+                AccountView()
             }
         } detail: {
             if let selection {
@@ -120,18 +129,18 @@ private struct ParentSplitView: View {
     private var sidebarFooter: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack {
+            HStack(spacing: 20) {
+                Button {
+                    showAccount = true
+                } label: {
+                    Label("Account", systemImage: "person.crop.circle")
+                }
                 Button {
                     showSettings = true
                 } label: {
                     Label("Household", systemImage: "gearshape")
                 }
                 Spacer()
-                Button(role: .destructive) {
-                    session.signOut()
-                } label: {
-                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                }
             }
             .font(.subheadline)
             .padding(.horizontal, 16)
@@ -147,7 +156,8 @@ private struct ParentSplitView: View {
 private func parentSectionView(_ section: ParentSection, session: AppSession) -> some View {
     switch section {
     case .inbox:
-        InboxView(approvalService: session.api, taskService: session.api)
+        InboxView(approvalService: session.api, taskService: session.api,
+                  walletService: session.api)
     case .family:
         FamilyView(householdService: session.api,
                    walletService: session.api,
@@ -156,5 +166,7 @@ private func parentSectionView(_ section: ParentSection, session: AppSession) ->
         TasksListView(definitionService: session.api,
                       householdService: session.api,
                       seriesService: session.api)
+    case .reports:
+        ReportsView(reportService: session.api, householdService: session.api)
     }
 }
