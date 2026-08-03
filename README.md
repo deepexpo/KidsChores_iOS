@@ -16,6 +16,14 @@ Offline-first · iPad-adaptive · SOLID-structured · one codebase, two experien
 
 ---
 
+## Demo
+
+<div align="center">
+<img src="docs/demo.gif" width="280" alt="KidsChores demo — teen completing tasks and the wallet updating" />
+</div>
+
+---
+
 ## Why this project
 
 Most chore apps are built for young children — sticker charts and confetti — and a 15-year-old
